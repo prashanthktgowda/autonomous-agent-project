@@ -1,0 +1,15 @@
+# autonomous-agent-project/requirements.txt
+
+langchain
+langchain-community # Keep for tools like DuckDuckGoSearchRun if used
+langchain-google-genai # <--- ADD THIS
+python-dotenv
+beautifulsoup4
+lxml
+playwright
+# selenium # Or keep selenium if you chose that
+reportlab
+# duckduckgo-search # Keep if using the search tool
+# huggingface-hub # <--- REMOVE or COMMENT OUT if added explicitly
+# langchain-huggingface # <--- REMOVE or COMMENT OUT if added explicitly
+google-generativeai # <--- ADD THIS (often a dependency, but good to list)

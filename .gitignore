@@ -1,0 +1,35 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+*.venv
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Environment variables
+.env
+
+# Output files
+outputs/*
+!outputs/.gitkeep # Keep the outputs folder but not its contents initially
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+.pytest_cache/
+coverage.xml
+htmlcov/
+
+# Playwright cache/binaries (if installed locally)
+playwright-browsers/
