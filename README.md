@@ -1,4 +1,4 @@
-# Autonomous AI Agent Project (using Google Gemini)
+# Autonomous AI Agent
 
 ## Overview
 
