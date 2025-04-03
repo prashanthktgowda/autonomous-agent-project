@@ -41,7 +41,7 @@ The system is built using Python and the LangChain framework, interacting with t
 
 ### Verification Stages Diagram (Conceptual Flow)
 
-```mermaid
+mermaid
 graph LR
     A[User Input] --> B{Agent Core (Gemini LLM + ReAct Planner)};
     B -- Thought --> C{Tool Selection};
