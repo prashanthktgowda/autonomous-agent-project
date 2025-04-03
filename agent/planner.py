@@ -2,80 +2,81 @@
 
 import os
 from dotenv import load_dotenv
-# from langchain_community.llms import HuggingFaceHub # REMOVE or COMMENT OUT
-from langchain_google_genai import ChatGoogleGenerativeAI # <--- IMPORT THIS
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain import hub
 
-# Import your tools (keep these)
+# --- Tool Imports ---
 from tools.browser_tool import browser_tool
 from tools.terminal_tool import terminal_tool
 from tools.filesystem_tool import read_file_tool, write_file_tool, list_directory_tool
-from tools.reporting_tool import generate_pdf_report_tool
-# from langchain_community.tools import DuckDuckGoSearchRun # Optional: Add if using search
+# Import BOTH PDF tools now
+from tools.reporting_tool import generate_basic_pdf_report_tool, generate_pdf_with_chart_tool
+# Import Search Tool
+from langchain_community.tools import DuckDuckGoSearchRun
+# --- End Tool Imports ---
 
-# Load environment variables (like GOOGLE_API_KEY)
 load_dotenv()
 
 def initialize_agent(verbose: bool = False):
     """
-    Initializes the LangChain agent with the defined tools and Google AI Studio (Gemini) LLM.
+    Initializes the LangChain agent with tools including Search and Charting PDF.
     """
     print("Initializing Google AI Studio (Gemini) LLM and Agent...")
 
-    # 1. Choose LLM from Google AI Studio (Gemini)
+    # 1. Initialize LLM (Same as before)
     google_api_key = os.getenv("GOOGLE_API_KEY")
     if not google_api_key:
         raise ValueError("Google API key not found in .env file. Please set GOOGLE_API_KEY.")
-
-    # Select a Gemini model. "gemini-1.5-flash-latest" is often fast and capable for free tier.
-    # Other options: "gemini-pro", "gemini-1.5-pro-latest" (check Google AI Studio for available models)
     model_name = "gemini-1.5-flash-latest"
-    # model_name = "gemini-pro" # Solid alternative
-
     print(f"Using Google Gemini model: {model_name}")
-
     try:
         llm = ChatGoogleGenerativeAI(
             model=model_name,
             google_api_key=google_api_key,
-            temperature=0.1, # Low temperature for more deterministic planning
-            # convert_system_message_to_human=True # May be needed for some older models/prompts if system messages cause issues
+            temperature=0.1,
         )
-        # Test the connection briefly (optional but recommended)
-        # llm.invoke("test")
         print("Successfully initialized Google Gemini LLM.")
     except Exception as e:
          print(f"Error initializing Google Gemini LLM: {e}")
-         print("Please ensure your GOOGLE_API_KEY is correct and you have enabled the API in your Google Cloud project if required.")
-         raise # Re-raise the exception to stop execution
+         raise
 
-
-    # 2. Define Tools (SAME AS BEFORE)
-    # search_tool = DuckDuckGoSearchRun() # Optional Search
+    # 2. Define Tools (ADD Search and Charting PDF tool)
+    search_tool = DuckDuckGoSearchRun()
     tools = [
-        # search_tool, # Add search first if needed
+        search_tool, # Add search tool, often useful first
         browser_tool,
-        terminal_tool,
+        terminal_tool, # Keep security warnings in mind
         read_file_tool,
         write_file_tool,
         list_directory_tool,
-        generate_pdf_report_tool,
+        generate_basic_pdf_report_tool, # Tool for text-only PDFs
+        generate_pdf_with_chart_tool,   # Tool for PDFs with a chart
     ]
+    # Check if matplotlib is available and potentially disable the chart tool if not
+    # (The tool function itself checks, but good practice to inform the user here too)
+    try:
+         from tools.reporting_tool import MATPLOTLIB_AVAILABLE
+         if not MATPLOTLIB_AVAILABLE:
+              print("WARNING: Matplotlib not found. PDF chart generation tool will be available but return an error if used.")
+              # Optionally remove the tool if unavailable:
+              # tools = [t for t in tools if t.name != "Generate PDF Report with Bar Chart"]
+    except ImportError:
+         print("WARNING: Could not check Matplotlib availability. Ensure it's installed for chart generation.")
+
+
     print(f"Agent will have access to {len(tools)} tools: {[tool.name for tool in tools]}")
 
 
-    # 3. Create Agent Prompt (SAME AS BEFORE)
-    # Use a standard ReAct prompt suitable for tool use.
+    # 3. Create Agent Prompt (Same as before - ReAct prompt is generally suitable)
     try:
-        # This prompt generally works well with Gemini models too
         prompt_template = hub.pull("hwchase17/react")
     except Exception as e:
         print(f"Error pulling prompt from LangChain Hub: {e}")
         raise
 
 
-    # 4. Create the Agent (SAME AS BEFORE)
+    # 4. Create the Agent (Same as before)
     try:
         agent = create_react_agent(llm=llm, tools=tools, prompt=prompt_template)
         print("Agent created successfully.")
@@ -84,13 +85,13 @@ def initialize_agent(verbose: bool = False):
         raise
 
 
-    # 5. Create the Agent Executor (SAME AS BEFORE)
+    # 5. Create the Agent Executor (Same as before)
     agent_executor = AgentExecutor(
         agent=agent,
         tools=tools,
         verbose=verbose,
-        handle_parsing_errors=True, # Helps manage LLM formatting mistakes
-        max_iterations=15,
+        handle_parsing_errors="Check your output and make sure it conforms!", # More direct error feedback
+        max_iterations=20, # Increased slightly for potentially longer research tasks
         # early_stopping_method="generate",
     )
     print("Agent Executor created.")
