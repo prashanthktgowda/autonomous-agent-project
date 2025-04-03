@@ -186,4 +186,3 @@ For questions or feedback, please contact [Your Name](mailto:your-email@example.
 - **Project Banner:** `assets/project_banner.png`
 - **Architecture Diagram:** `assets/architecture_diagram.png`
 - **Video Thumbnail:** `assets/video_thumbnail.png`
-- 
