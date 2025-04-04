@@ -1,190 +1,108 @@
-# Autonomous AI Agent Project (using Google Gemini)
-
-![Project Banner](assets/project_banner.png) <!-- Replace with an actual banner image -->
+# Autonomous AI Agent Project (Enhanced)
 
 ## Overview
 
-This project implements an autonomous AI agent capable of understanding natural language instructions, executing tasks across different environments (web search, browser, terminal, file system), performing analysis, and delivering results including professional reports with visualizations. It uses Google's Gemini models via the Google AI Studio API as its core reasoning engine. The agent operates autonomously after receiving the initial instruction, minimizing user effort while maximizing utility.
+This project implements an advanced autonomous AI agent capable of understanding complex natural language instructions and executing tasks across multiple environments: web browsing (text and table scraping), stock data retrieval, terminal command execution (sandboxed), file system operations (read, write, append, list, delete with confirmation), data analysis, and professional PDF report generation (including text, automated line/bar charts).
 
-> **Assignment Context:** This project was developed to fulfill the requirements of the Autonomous AI Agent Assessment.
+The agent operates autonomously after receiving the initial instruction, leveraging a Large Language Model (LLM) – configured for Google Gemini by default – for reasoning and planning, and a suite of specialized tools for interacting with its environment. The project includes both a command-line interface (`main.py`) and a web interface (`app.py` using Streamlit) with real-time streaming output.
 
----
+This project aims to simulate capabilities similar to advanced AI assistant platforms, providing a framework for complex task automation developed as part of a college assignment.
 
 ## Features
 
-### 🌟 Key Capabilities
-- **Natural Language Understanding:** Parses user instructions to determine the goal using the Google Gemini LLM.
-- **Task Planning:** Breaks down complex tasks into sequential steps using the LLM and the ReAct agent framework within LangChain.
-- **Multi-Environment Execution:**
-  - **Web Search:** Uses DuckDuckGo to find relevant information and URLs online.
-  - **Browser:** Navigates websites using Playwright to extract and scrape text content.
-  - **Terminal:** Executes **strictly limited** shell commands (with security warnings and basic filtering).
-  - **File System:** Reads, writes, and lists files **strictly within** a designated `outputs` directory for safety.
-- **Reporting & Visualization:**
-  - Generates organized text files.
-  - Creates professional PDF reports containing text-based analysis.
-  - Generates PDF reports with **bar chart visualizations** using Matplotlib and ReportLab.
-- **Autonomous Operation:** Requires no further user input after the initial command is given.
-
----
+*   **Natural Language Understanding:** Parses user instructions using a powerful LLM (e.g., Google Gemini).
+*   **Multi-Step Planning:** Breaks down complex tasks into sequential steps using the ReAct agent framework within LangChain.
+*   **Multi-Environment Tool Use:**
+    *   **Web Search:** Finds relevant information online (using DuckDuckGo).
+    *   **Web Browsing (Text):** Navigates websites and extracts cleaned textual content, prioritizing headlines and paragraphs.
+    *   **Web Browsing (Tables):** Attempts to find, parse, and extract data from HTML tables on webpages into CSV format (requires `pandas`, `lxml`, `html5lib`).
+    *   **Stock Data:** Fetches historical stock market data for specified tickers and periods using `yfinance` (requires `yfinance`, `pandas`).
+    *   **Terminal:** Executes a limited set of explicitly allowed, safe shell commands (OS-aware) OR designated Python scripts within the project structure (with path validation). Returns structured JSON output (stdout, stderr, exit code). **USE WITH EXTREME CAUTION.**
+    *   **File System:** Reads, writes (overwrite), appends, lists files, and requests deletion confirmation, **strictly sandboxed** within the `./outputs` directory. Handles `\n` escapes in write/append.
+    *   **Data Processing:** Performs basic summary statistics (`describe`) on provided CSV data using Pandas (requires `pandas`).
+    *   **Reporting (Text):** Generates simple, text-only PDF reports using ReportLab.
+    *   **Reporting (Auto-Chart):** Generates PDF reports including text and **attempts to automatically create** a relevant line or bar chart if suitable CSV data is provided, inferring columns and chart type (requires `reportlab`, `pandas`, `matplotlib`). Falls back to text-only if charting fails or libraries are missing.
+*   **Agent-Initiated Deletion with Confirmation:** Agent can request file deletion via a specific tool, which requires explicit user confirmation via the UI or CLI before execution.
+*   **Streaming UI:** The Streamlit web interface (`app.py`) shows the agent's thought process and tool usage in near real-time using LangChain Callbacks and threading.
+*   **Configurable Model:** Allows selection of different LLM models (if configured in `planner.py`) and adjustment of parameters like temperature via the Streamlit sidebar or CLI arguments.
 
 ## Architecture
 
-![Architecture Diagram](assets/architecture_diagram.png) <!-- Replace with an actual architecture diagram -->
+The system is built using Python, leveraging the LangChain framework for agent logic and tool integration, and Streamlit for the web UI.
 
-The system is built using Python and the LangChain framework, interacting with the Google AI Studio API.
-
-### Key Components
-- **`main.py`**: Entry point for the application. Handles command-line arguments, initializes the agent, and manages top-level error reporting.
-- **`agent/planner.py`**: Defines the agent's reasoning loop, tool integration, and LLM connection.
-- **`tools/`**: Contains modules for environment interactions as LangChain `Tool` objects.
-- **`outputs/`**: Designated safe directory for generated files (text, PDF).
-- **`requirements.txt`**: Lists all necessary Python dependencies.
-- **`.env`**: Stores the necessary API key (`GOOGLE_API_KEY`).
-
----
-
-## Setup
-
-### 1️⃣ Clone the Repository
-```bash
-git clone <your-repo-url>
-cd autonomous-agent-project
-```
-
-### 2️⃣ Create and Activate a Virtual Environment
-```bash
-python -m venv venv
-# On Linux/macOS:
-source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
-```
-
-### 3️⃣ Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 4️⃣ Install Playwright Browser Binaries
-```bash
-playwright install
-```
-
-### 5️⃣ Set Up Google AI Studio API Key
-1. Go to Google AI Studio and sign in.
-2. Click "Get API key" and create a new API key if needed.
-3. Create a `.env` file in the project root and add your API key:
-   ```plaintext
-   GOOGLE_API_KEY="YOUR_GOOGLE_AI_STUDIO_API_KEY_HERE"
-   ```
-
-> **Note:** Ensure `.env` is listed in `.gitignore` to prevent accidentally committing your secret key.
-
----
-
-## Usage
-
-### Basic Command
-Run the agent with a natural language instruction:
-```bash
-python main.py "Your natural language instruction here"
-```
-
-### Verbose Mode (Recommended for Debugging)
-```bash
-python main.py -v "Your natural language instruction here"
-```
-
-### Example Commands
-#### Basic Level
-```bash
-python main.py -v "Find 5 recent headlines about Artificial Intelligence and save them to 'ai_headlines.txt'."
-```
-
-#### Intermediate Level
-```bash
-python main.py -v "Summarize reviews of the 'Google Pixel 8' and save the analysis to 'pixel8_review_summary.txt'."
-```
-
-#### Advanced Level
-```bash
-python main.py -v "Analyze global solar PV capacity trends and generate a PDF report with a bar chart."
-```
-
----
-
-## Verification Stages
-
-### Conceptual Flow Diagram
 ```mermaid
 graph LR
-    A[User Input] --> B{Agent Core (Gemini LLM + ReAct Planner)};
-    B -- Thought --> C{Tool Selection};
-    C -- Action Input --> D[DuckDuckGo Search];
-    C -- Action Input --> E[Web Browser Scraper];
-    C -- Action Input --> F[Terminal Executor];
-    C -- Action Input --> G[Filesystem Tools (Read/Write/List)];
-    C -- Action Input --> H[Basic PDF Tool];
-    C -- Action Input --> I[Charting PDF Tool];
-    D -- Observation --> B;
-    E -- Observation --> B;
-    F -- Observation --> B;
-    G -- Observation --> B;
-    H -- Observation --> B;
-    I -- Observation --> B;
-    B -- Final Answer --> J[Output to Console / File in ./outputs];
-```
+    subgraph User Interface
+        direction LR
+        CLI[main.py CLI]
+        WEB[app.py Streamlit UI]
+    end
 
----
+    subgraph Agent Core
+        direction TB
+        A[LLM (e.g., Gemini)] -- Reasoning --> B(Agent Planner / ReAct Loop);
+        B -- Chooses Tool --> C{Tool Executor};
+    end
 
-## Video Demonstration
+    subgraph Tools [Environment Interaction Layer]
+        direction TB
+        T_Search[DuckDuckGo Search]
+        T_Browse_Text[Web Text Scraper]
+        T_Browse_Table[Web Table Extractor]
+        T_Stock[Stock Data (yfinance)]
+        T_Terminal[Sandboxed Terminal/Script]
+        T_FS_Read[Filesystem Read]
+        T_FS_Write[Filesystem Write/Overwrite]
+        T_FS_Append[Filesystem Append]
+        T_FS_List[Filesystem List]
+        T_FS_DeleteReq[Filesystem Delete Request]
+        T_Data[Data Stats (Pandas)]
+        T_PDF_Text[PDF Report (Text)]
+        T_PDF_AutoChart[PDF Report (Auto-Chart)]
+    end
 
-[![Watch the Video](assets/video_thumbnail.png)](https://example.com/video-demo) <!-- Replace with actual video link -->
+    subgraph Execution Environment
+        direction TB
+        Net[Internet]
+        LocalFS[Local Filesystem (./outputs, ./scripts)]
+        PyEnv[Python Environment]
+    end
 
----
+    CLI --> B;
+    WEB --> B;
+    C --> T_Search;
+    C --> T_Browse_Text;
+    C --> T_Browse_Table;
+    C --> T_Stock;
+    C --> T_Terminal;
+    C --> T_FS_Read;
+    C --> T_FS_Write;
+    C --> T_FS_Append;
+    C --> T_FS_List;
+    C --> T_FS_DeleteReq;
+    C --> T_Data;
+    C --> T_PDF_Text;
+    C --> T_PDF_AutoChart;
 
-## Known Limitations & Future Work
+    T_Search --> Net;
+    T_Browse_Text --> Net;
+    T_Browse_Table --> Net;
+    T_Stock --> Net;
+    T_Terminal --> PyEnv;
+    T_FS_Read --> LocalFS;
+    T_FS_Write --> LocalFS;
+    T_FS_Append --> LocalFS;
+    T_FS_List --> LocalFS;
+    T_FS_DeleteReq --> B; # Returns confirmation string
+    T_Data --> PyEnv; # Requires Pandas
+    T_PDF_Text --> LocalFS; # Requires ReportLab
+    T_PDF_AutoChart --> LocalFS; # Requires ReportLab
+    T_PDF_AutoChart -- Uses --> PyEnv; # Requires Matplotlib/Pandas
 
-### Limitations
-- **Terminal Security:** The terminal tool's safety filter is basic. Use in a sandboxed environment.
-- **Browser Reliability:** Web scraping is fragile and may fail on dynamic or anti-scraping websites.
-- **LLM Reliability:** The LLM may misinterpret instructions or hallucinate information.
-- **Error Handling:** Complex errors might cause the agent to fail or get stuck.
+    WEB -- Displays File List --> LocalFS;
+    WEB -- Triggers Manual Delete --> LocalFS; # Bypasses Agent Core
 
-### Future Work
-- Improve terminal tool security.
-- Add support for more visualization types.
-- Enhance error recovery mechanisms.
-
----
-
-## Dependencies
-
-- `langchain`
-- `langchain-community`
-- `langchain-google-genai`
-- `google-generativeai`
-- `python-dotenv`
-- `playwright`
-- `beautifulsoup4`
-- `lxml`
-- `reportlab`
-- `matplotlib`
-- `duckduckgo-search`
-
----
-
-## Contact
-
-For questions or feedback, please contact [Prashnth K T](mailto:prashanthktgowda123@gmail.com).
-
----
-
-## Assets
-
-- **Project Banner:** `assets/project_banner.png`
-- **Architecture Diagram:** `assets/architecture_diagram.png`
-<<<<<<< HEAD
-- **Video Thumbnail:** `assets/video_thumbnail.png`
-=======
+    style Agent Core fill:#e3f2fd,stroke:#333,stroke-width:2px
+    style Tools fill:#e8f5e9,stroke:#333,stroke-width:1px
+    style User Interface fill:#fff3e0,stroke:#333,stroke-width:1px
+    style Execution Environment fill:#fce4ec,stroke:#333,stroke-width:1px

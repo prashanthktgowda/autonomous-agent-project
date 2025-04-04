@@ -9,6 +9,9 @@ import io
 from contextlib import redirect_stdout
 import traceback
 import time # Import time for delay after deletion/refresh
+from fpdf import FPDF
+import matplotlib.pyplot as plt
+import tempfile
 
 # --- Add project root to Python path ---
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -221,6 +224,67 @@ if st.session_state.last_verbose_output:
      with st.expander("Last Agent Thought Process (Verbose Output)", expanded=False):
         st.text_area("Logs:", value=st.session_state.last_verbose_output, height=400, disabled=True, key="verbose_log_area_display")
 
+
+# --- PDF Generation Function ---
+def generate_pdf_with_charts(output_text, chart_data, output_file):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    # Add Title
+    pdf.set_font("Arial", style="B", size=16)
+    pdf.cell(200, 10, txt="Generated Report", ln=True, align="C")
+    pdf.ln(10)
+
+    # Add Text Content
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, txt=output_text)
+    pdf.ln(10)
+
+    # Add Charts
+    for idx, data in enumerate(chart_data):
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_chart:
+            plt.figure(figsize=(6, 4))
+            plt.plot(data["x"], data["y"], label=data.get("label", "Data"))
+            plt.title(data.get("title", "Chart"))
+            plt.xlabel(data.get("xlabel", "X-axis"))
+            plt.ylabel(data.get("ylabel", "Y-axis"))
+            plt.legend()
+            plt.savefig(temp_chart.name)
+            plt.close()
+
+            pdf.add_page()
+            pdf.image(temp_chart.name, x=10, y=30, w=180)
+            os.unlink(temp_chart.name)  # Clean up temporary file
+
+    # Save PDF
+    pdf.output(output_file)
+    return output_file
+
+# --- UI Elements for PDF Generation ---
+if st.button("Generate PDF Report"):
+    if st.session_state.last_final_output:
+        try:
+            # Example chart data (replace with actual data)
+            chart_data = [
+                {"x": [2019, 2020, 2021, 2022], "y": [100, 200, 300, 400], "label": "Trend A", "title": "Example Chart A"},
+                {"x": [2019, 2020, 2021, 2022], "y": [400, 300, 200, 100], "label": "Trend B", "title": "Example Chart B"},
+            ]
+            output_pdf_path = OUTPUT_DIR / "generated_report.pdf"
+            generate_pdf_with_charts(st.session_state.last_final_output, chart_data, str(output_pdf_path))
+            st.success(f"PDF report generated: {output_pdf_path}")
+            with open(output_pdf_path, "rb") as pdf_file:
+                st.download_button(
+                    label="Download PDF Report",
+                    data=pdf_file,
+                    file_name="generated_report.pdf",
+                    mime="application/pdf"
+                )
+        except Exception as e:
+            st.error(f"Failed to generate PDF: {e}")
+    else:
+        st.warning("No output available to generate a PDF report.")
 
 # --- Output Files Browser Section ---
 st.divider()

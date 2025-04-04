@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from langchain_core.exceptions import OutputParserException
 import traceback
 import sys # For exiting on import error
+from tools.delete_file_tool import perform_delete
 
 # --- Define Output Directory ---
 # Needs to be consistent with tools
