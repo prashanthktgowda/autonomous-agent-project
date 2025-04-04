@@ -12,3 +12,4 @@ reportlab
 matplotlib          # <--- ADD for charts
 duckduckgo-search   # <--- ADD for search tool
 google-generativeai
+streamlit
