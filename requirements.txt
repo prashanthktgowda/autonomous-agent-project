@@ -1,15 +1,17 @@
-# autonomous-agent-project/requirements.txt
-
 langchain
+langchain-google-genai # Or langchain-openai, langchain-huggingface etc.
 langchain-community
-langchain-google-genai
 python-dotenv
-beautifulsoup4
-lxml
-playwright
-# selenium # Or keep selenium if you chose that
-reportlab
-matplotlib          # <--- ADD for charts
-duckduckgo-search   # <--- ADD for search tool
-google-generativeai
-streamlit
+beautifulsoup4>=4.11.0 # Ensure recent version
+lxml>=4.9.0            # Required by pandas/bs4 for parsing
+html5lib>=1.1          # Required by pandas.read_html
+playwright>=1.30.0     # Ensure recent version
+reportlab>=3.6.0
+streamlit>=1.25.0      # Ensure recent version for latest features
+pandas>=1.5.0          # Required for table/data tools
+yfinance>=0.2.10       # For stock tool
+matplotlib>=3.6.0      # For charting tool
+duckduckgo-search>=4.0 # For search tool
+huggingface-hub        # Needed for pulling prompts from hub
+requests               # Often useful, might be dependency anyway
+wbgapi

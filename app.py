@@ -39,94 +39,78 @@ except Exception as e:
 # --- ---
 
 # --- Page Configuration ---
-st.set_page_config(page_title="Autonomous AI Agent", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Autonomous AI Agent", layout="centered", initial_sidebar_state="collapsed")
 
 # --- Custom CSS Styling ---
 st.markdown("""
 <style>
-    /* General UI improvements */
-    .stTextArea [data-baseweb="textarea"] {
-        min-height: 100px;
-        font-size: 1.1em; /* Slightly larger text */
-    }
-    .stButton>button {
-        border-radius: 5px; /* Rounded corners */
-        padding: 8px 15px; /* More padding */
+    /* General dark theme styling */
+    body {
+        background-color: #121212; /* Dark background */
+        color: #ffffff; /* White text */
     }
     h1 {
         text-align: center;
-        color: #2c3e50; /* Darker title color */
-        margin-bottom: 0.5em;
+        color: #ffffff; /* White title color */
+        font-size: 2.5em;
+        margin-top: 20px;
     }
     .stCaption {
         text-align: center;
-        color: #7f8c8d; /* Subdued caption color */
+        color: #b0b0b0; /* Light gray caption color */
+        font-size: 1.2em;
     }
-
-    /* Specific Button Styling */
-    /* Run Agent Button */
-    .stButton button[kind="primary"] {
-        /* Default Streamlit primary style is usually okay */
-        /* background-color: #3498db; */
-        /* border-color: #2980b9; */
-    }
-     /* Refresh Button */
-    .stButton button[kind="secondary"] {
-         /* Default Streamlit secondary style */
-    }
-
-    /* Download Button */
-    div[data-testid="stDownloadButton"] > button {
-        width: auto;
-        height: auto;
-        font-size: 14px;
-        margin-top: 10px;
+    .stTextArea [data-baseweb="textarea"] {
+        margin: 0 auto;
+        width: 80%;
+        min-height: 100px;
+        font-size: 1.1em;
+        background-color: #1e1e1e; /* Darker text area background */
+        color: #ffffff; /* White text */
+        border: 1px solid #333333; /* Subtle border */
         border-radius: 5px;
-        background-color: #1abc9c; /* Teal color */
-        border-color: #16a085;
+    }
+    .stButton>button {
+        margin: 0 auto;
+        display: block;
+        border-radius: 5px;
+        padding: 10px 20px;
+        background-color: #4CAF50; /* Green button */
         color: white;
+        font-size: 16px;
     }
-     div[data-testid="stDownloadButton"] > button:hover {
-         background-color: #16a085;
-         border-color: #138d75;
-     }
-
-    /* Initial Delete Button (secondary style but red border) */
-     /* Note: Targeting precisely might be tricky, use keys if needed */
-     button[kind="secondary"]:has(span > svg[data-icon="trash"]) { /* Attempt to target button with trash icon */
-        border: 1px solid #e74c3c !important; /* Red border */
-        color: #e74c3c !important; /* Red text */
-        margin-left: 10px; /* Add some space next to download */
-     }
-     button[kind="secondary"]:has(span > svg[data-icon="trash"]):hover {
-        background-color: #fadbd8 !important; /* Light red background on hover */
-     }
-
-
-    /* YES, DELETE Confirmation Button */
-    button[data-testid="baseButton-primary"]:not([kind="secondary"]):not([data-testid*="stDownloadButton"]) { /* Target primary confirmation button */
-        background-color: #e74c3c !important; /* Red background */
-        border-color: #c0392b !important; /* Darker red border */
-        color: white !important;
+    .stButton>button:hover {
+        background-color: #45a049; /* Darker green on hover */
     }
-    button[data-testid="baseButton-primary"]:not([kind="secondary"]):not([data-testid*="stDownloadButton"]):hover {
-         background-color: #c0392b !important;
-         border-color: #a93226 !important;
+    .stDownloadButton>button {
+        background-color: #1abc9c; /* Teal button */
+        color: white;
+        border-radius: 5px;
     }
-
-
-    /* Make code blocks readable */
-    pre code {
-        white-space: pre-wrap !important; /* Allow wrapping */
-        word-wrap: break-word !important; /* Break long words */
-        font-size: 0.95em;
+    .stDownloadButton>button:hover {
+        background-color: #16a085; /* Darker teal on hover */
+    }
+    .stCheckbox {
+        margin: 0 auto;
+        display: block;
+        text-align: center;
+    }
+    .stTextArea {
+        margin: 0 auto;
+    }
+    .stExpander {
+        background-color: #1e1e1e; /* Darker background for expanders */
+        color: #ffffff;
+    }
+    .stSelectbox {
+        margin: 0 auto;
+        width: 80%;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧠 Autonomous AI Agent")
-st.caption("Interact with the AI agent to perform tasks across web, terminal, and file system.")
-st.divider()
+st.title("What can I help with?")
+st.caption("Interact with the AI agent to perform tasks effortlessly.")
 # --- ---
 
 # --- Check for Necessary API Key ---
@@ -178,23 +162,13 @@ if not agent_executor:
 
 
 # --- UI Elements for Agent Interaction ---
-st.header("🤖 Agent Interaction")
-col1, col2 = st.columns([3, 1])
+instruction = st.text_area(
+    "Ask anything:",
+    height=120,
+    placeholder="e.g., Summarize the content of 'outputs/some_data.txt'."
+)
 
-with col1:
-    instruction = st.text_area(
-        "**Enter your instruction for the Agent:**",
-        height=120,
-        placeholder="e.g., Read the file 'outputs/some_data.txt' and summarize its content."
-    )
-
-with col2:
-    st.markdown("**Options:**")
-    show_verbose = st.checkbox("Show Agent's Thought Process", value=False, help="Displays the detailed steps (Thoughts, Actions, Observations) the agent takes.")
-    st.markdown("---")
-    submit_button = st.button("🚀 Run Agent", type="primary") # Make run button primary
-
-st.divider()
+submit_button = st.button("Run Agent")
 
 # --- Agent Execution Logic ---
 # Use session state to store the last result and logs
@@ -204,16 +178,14 @@ if 'last_verbose_output' not in st.session_state:
     st.session_state.last_verbose_output = None
 
 if submit_button and instruction:
-    st.markdown("### Agent Execution Log")
-    status_placeholder = st.empty()
-    status_placeholder.info("Agent is processing your request... Please wait.", icon="⏳")
+    st.info("Processing your request... Please wait.")
     stdout_capture = io.StringIO()
     st.session_state.last_final_output = None # Clear previous results
     st.session_state.last_verbose_output = None
 
     try:
         with st.spinner("Agent thinking and acting... 🤔"):
-            capture_output = show_verbose
+            capture_output = False
             if capture_output:
                  # Redirect stdout to capture verbose logs from LangChain/tools
                  with redirect_stdout(stdout_capture):
@@ -221,19 +193,13 @@ if submit_button and instruction:
             else:
                  result = agent_executor.invoke({"input": instruction})
 
-        status_placeholder.empty()
         final_output = result.get('output', '*Agent finished, but no specific "output" text was provided.*')
         st.session_state.last_final_output = final_output # Store result
 
-        st.success("**Agent Run Complete!**", icon="✅")
-
-        if capture_output:
-            st.session_state.last_verbose_output = stdout_capture.getvalue() # Store logs
+        st.success("Agent execution completed successfully!")
 
     except Exception as e:
-        status_placeholder.empty()
-        st.error(f"An error occurred during agent execution: {e}", icon="❌")
-        st.error("Check instruction or agent configuration. See console for details.")
+        st.error(f"An error occurred: {e}")
         print("\n--- Agent Execution Error in Streamlit App ---")
         traceback.print_exc()
         print("--- End Agent Execution Error ---\n")
@@ -454,6 +420,5 @@ else:
 
 
 # --- Footer Info ---
-st.divider()
-st.markdown(f"<p style='text-align: center; color: grey;'>Agent outputs are saved in the <code>{OUTPUT_DIR.name}/</code> directory ({OUTPUT_DIR})</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: grey;'>Outputs are saved in the <code>outputs/</code> directory.</p>", unsafe_allow_html=True)
 # --- ---

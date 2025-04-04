@@ -177,7 +177,7 @@ graph LR
 
 ## Contact
 
-For questions or feedback, please contact [Your Name](mailto:your-email@example.com).
+For questions or feedback, please contact [Prashnth K T](mailto:prashanthktgowda123@gmail.com).
 
 ---
 
@@ -188,5 +188,3 @@ For questions or feedback, please contact [Your Name](mailto:your-email@example.
 <<<<<<< HEAD
 - **Video Thumbnail:** `assets/video_thumbnail.png`
 =======
-- **Video Thumbnail:** `assets/video_thumbnail.png`
->>>>>>> 2be0f2bd54f1a59519985e771cbd96d6aa37a414

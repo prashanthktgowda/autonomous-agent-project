@@ -1,35 +1,49 @@
-# Python cache
+# Python cache files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
 
-# Virtual environment
+# Virtual environment directories
 venv/
 env/
 *.venv
+.venv/
 
-# IDE / Editor specific
+# IDE configuration directories
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
 
-# Environment variables
+# Environment variables file
 .env
 
-# Output files
+# Output files (allow the directory itself via .gitkeep)
 outputs/*
-!outputs/.gitkeep # Keep the outputs folder but not its contents initially
+!outputs/.gitkeep
 
 # OS generated files
 .DS_Store
 Thumbs.db
 
-# Test artifacts
+# Test artifacts and coverage reports
 .pytest_cache/
+.coverage
 coverage.xml
 htmlcov/
+*.lcov
 
-# Playwright cache/binaries (if installed locally)
+# Playwright browser cache/binaries
 playwright-browsers/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+logs/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
