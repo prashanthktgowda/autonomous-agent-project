@@ -30,79 +30,47 @@ This project aims to simulate capabilities similar to advanced AI assistant plat
 
 The system is built using Python, leveraging the LangChain framework for agent logic and tool integration, and Streamlit for the web UI.
 
+**Conceptual Flow:**
+
 ```mermaid
-graph LR
+graph TD
     subgraph User Interface
-        direction LR
-        CLI[main.py CLI]
-        WEB[app.py Streamlit UI]
+        UI_Input[User Instruction (CLI or Web UI)]
     end
 
-    subgraph Agent Core
-        direction TB
-        A[LLM (e.g., Gemini)] -- Reasoning --> B(Agent Planner / ReAct Loop);
-        B -- Chooses Tool --> C{Tool Executor};
+    subgraph Agent_System [Agent System]
+        A_Planner[Agent Planner (ReAct Loop + LLM Reasoning)]
+        A_Tools[Tool Executor]
     end
 
-    subgraph Tools [Environment Interaction Layer]
-        direction TB
-        T_Search[DuckDuckGo Search]
-        T_Browse_Text[Web Text Scraper]
-        T_Browse_Table[Web Table Extractor]
-        T_Stock[Stock Data (yfinance)]
-        T_Terminal[Sandboxed Terminal/Script]
-        T_FS_Read[Filesystem Read]
-        T_FS_Write[Filesystem Write/Overwrite]
-        T_FS_Append[Filesystem Append]
-        T_FS_List[Filesystem List]
-        T_FS_DeleteReq[Filesystem Delete Request]
-        T_Data[Data Stats (Pandas)]
-        T_PDF_Text[PDF Report (Text)]
-        T_PDF_AutoChart[PDF Report (Auto-Chart)]
+    subgraph Available_Tools [Available Tools Layer]
+        T_Search(Web Search)
+        T_Browse(Web Scraping: Text/Tables)
+        T_Stock(Stock Data)
+        T_Terminal(Terminal/Script Exec)
+        T_FS(Filesystem Ops: RWLA, Del Req)
+        T_Data(Data Analysis)
+        T_Report(PDF Reporting: Text/Auto-Chart)
+        T_Other(...)
     end
 
-    subgraph Execution Environment
-        direction TB
-        Net[Internet]
-        LocalFS[Local Filesystem (./outputs, ./scripts)]
-        PyEnv[Python Environment]
+    subgraph Environment
+        Env_Net[Internet]
+        Env_FS[Local Filesystem (outputs/, scripts/)]
+        Env_Py[Python Environment (Libs)]
     end
 
-    CLI --> B;
-    WEB --> B;
-    C --> T_Search;
-    C --> T_Browse_Text;
-    C --> T_Browse_Table;
-    C --> T_Stock;
-    C --> T_Terminal;
-    C --> T_FS_Read;
-    C --> T_FS_Write;
-    C --> T_FS_Append;
-    C --> T_FS_List;
-    C --> T_FS_DeleteReq;
-    C --> T_Data;
-    C --> T_PDF_Text;
-    C --> T_PDF_AutoChart;
+    UI_Input --> A_Planner;
+    A_Planner -- Selects Tool & Input --> A_Tools;
+    A_Tools -- Executes --> Available_Tools;
 
-    T_Search --> Net;
-    T_Browse_Text --> Net;
-    T_Browse_Table --> Net;
-    T_Stock --> Net;
-    T_Terminal --> PyEnv;
-    T_FS_Read --> LocalFS;
-    T_FS_Write --> LocalFS;
-    T_FS_Append --> LocalFS;
-    T_FS_List --> LocalFS;
-    T_FS_DeleteReq --> B; # Returns confirmation string
-    T_Data --> PyEnv; # Requires Pandas
-    T_PDF_Text --> LocalFS; # Requires ReportLab
-    T_PDF_AutoChart --> LocalFS; # Requires ReportLab
-    T_PDF_AutoChart -- Uses --> PyEnv; # Requires Matplotlib/Pandas
+    Available_Tools -- Interact --> Environment;
+    Environment -- Result/Data --> Available_Tools;
+    Available_Tools -- Observation --> A_Planner;
 
-    WEB -- Displays File List --> LocalFS;
-    WEB -- Triggers Manual Delete --> LocalFS; # Bypasses Agent Core
+    A_Planner -- Final Answer --> User Interface;
 
-    style Agent Core fill:#e3f2fd,stroke:#333,stroke-width:2px
-    style Tools fill:#e8f5e9,stroke:#333,stroke-width:1px
-    style User Interface fill:#fff3e0,stroke:#333,stroke-width:1px
-    style Execution Environment fill:#fce4ec,stroke:#333,stroke-width:1px
+    style Agent_System fill:#e3f2fd,stroke:#333,stroke-width:2px
+    style Available_Tools fill:#e8f5e9,stroke:#333,stroke-width:1px
+    style User_Interface fill:#fff3e0,stroke:#333,stroke-width:1px
+    style Environment fill:#fce4ec,stroke:#333,stroke-width:1px
