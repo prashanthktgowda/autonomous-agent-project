@@ -295,6 +295,74 @@ def append_text_to_file(path_and_content: str) -> str:
         traceback.print_exc()
         relative_display_path = Path(file_path_str).name
         return f"Error appending to file '{relative_display_path}'. Details: {str(e)}"
+    
+
+
+
+
+# --- NEW FUNCTION: Replace Text in File ---
+def replace_text_in_file(input_str: str) -> str:
+    """
+    Reads a file within 'outputs', replaces all occurrences of a specific text
+    string with another string, and saves the modified content back to the same file.
+    Input format: 'relative/path/to/file.txt|TEXT_TO_FIND|TEXT_TO_REPLACE_WITH'
+    Uses case-sensitive replacement. Counts occurrences replaced.
+    """
+    print(f"Filesystem Tool: Attempting text replacement: '{input_str[:100]}...'")
+    try:
+        parts = input_str.split('|', 2)
+        if len(parts) != 3:
+            return ("Error: Input must be 'filepath|text_to_find|text_to_replace_with'. "
+                    "Use pipe '|' as separator. Example: 'notes.txt|old_value|new_value'")
+
+        file_path_str, text_to_find, text_to_replace_with = parts[0].strip(), parts[1], parts[2] # Keep original case for find/replace text
+
+        if not text_to_find: # Prevent replacing nothing, could lead to large file growth if replacement is long
+            return "Error: 'text_to_find' cannot be empty."
+
+        target_path = _resolve_path(file_path_str) # Use the validated helper
+        if not target_path:
+            return f"Error: Invalid or disallowed file path '{file_path_str}' for modification."
+
+        # Ensure file exists and is a file before trying to read/write
+        if not target_path.exists():
+             relative_err_path = target_path.relative_to(OUTPUT_DIR.parent) if target_path.is_absolute() else file_path_str
+             return f"Error: File not found at resolved path: {relative_err_path}"
+        if not target_path.is_file():
+             relative_err_path = target_path.relative_to(OUTPUT_DIR.parent) if target_path.is_absolute() else file_path_str
+             return f"Error: Path exists but is not a file: {relative_err_path}"
+
+        # Read the entire file content
+        print(f"Filesystem Tool (Replace): Reading content from {target_path}")
+        original_content = target_path.read_text(encoding='utf-8', errors='ignore')
+
+        # Perform the replacement
+        modified_content = original_content.replace(text_to_find, text_to_replace_with)
+        replacement_count = original_content.count(text_to_find) # Count occurrences in original
+
+        # Check if any changes were actually made
+        if original_content == modified_content:
+            print(f"Filesystem Tool (Replace): Text '{text_to_find}' not found in {target_path}. File unchanged.")
+            return f"Success: Text '{text_to_find}' not found in file 'outputs/{target_path.relative_to(OUTPUT_DIR)}'. No changes made."
+        else:
+            # Write the modified content back, overwriting the original file
+            print(f"Filesystem Tool (Replace): Writing modified content back to {target_path}")
+            target_path.write_text(modified_content, encoding='utf-8')
+            print(f"Filesystem Tool (Replace): Successfully replaced {replacement_count} occurrence(s).")
+            return (f"Success: Replaced {replacement_count} occurrence(s) of '{text_to_find}' "
+                    f"with '{text_to_replace_with}' in file 'outputs/{target_path.relative_to(OUTPUT_DIR)}'.")
+
+
+
+    except Exception as e:
+        print(f"Filesystem Tool Error (Replace): Failed for path '{file_path_str}'. Error: {e}")
+        traceback.print_exc()
+        relative_display_path = Path(file_path_str).name
+        return f"Error replacing text in file '{relative_display_path}'. Details: {str(e)}"
+
+
+
+
 # --- LangChain Tool Definitions ---
 
 read_file_tool = Tool(
@@ -346,3 +414,20 @@ append_file_tool = Tool(
         f"Output confirms success (including the relative path 'outputs/...') or provides an error message."
     ),
 )
+# --- NEW TOOL DEFINITION ---
+replace_text_tool = Tool(
+    name="Replace Text in File",
+    func=replace_text_in_file,
+    description=(
+        f"Use this tool to find all occurrences of a specific text string within a file in the '{OUTPUT_DIR.name}' directory and replace them with another text string. "
+        f"Input MUST be exactly three parts separated by pipes '|': 'relative/path/to/file.txt|TEXT_TO_FIND|TEXT_TO_REPLACE_WITH'. "
+        f"Example: 'config.txt|localhost|production.server.com'. "
+        f"The file path must be relative to '{OUTPUT_DIR.name}'. Do NOT use absolute paths or '..'. "
+        f"The 'TEXT_TO_FIND' cannot be empty. The replacement is case-sensitive. "
+        f"This tool reads the file, performs all replacements in memory, and then overwrites the original file with the modified content. "
+        f"Use this for tasks like updating values, correcting typos, or changing specific terms within a text file. "
+        f"Output confirms success (reporting number of replacements) or provides an error message."
+    ),
+)
+# --- END TOOL DEFINITIONS ---
+# --- END OF FILE ---
