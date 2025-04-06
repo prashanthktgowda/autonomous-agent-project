@@ -74,9 +74,3 @@ graph TD
     style Available_Tools fill:#e8f5e9,stroke:#333,stroke-width:1px
     style User_Interface fill:#fff3e0,stroke:#333,stroke-width:1px
     style Environment fill:#fce4ec,stroke:#333,stroke-width:1px
-## Demo Video
-
-<video controls>
-    <source src="/home/prashanthktgowda/academics_project/autonomus-AI/autonomous-agent-project/demo video.webm" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
