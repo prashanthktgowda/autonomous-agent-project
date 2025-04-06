@@ -10,6 +10,18 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain import hub
 import traceback
+# --- Tool Imports ---
+from tools.browser_tool import browser_tool, extract_tables_tool
+from tools.terminal_tool import terminal_tool_enhanced
+from tools.filesystem_tool import read_file_tool, write_file_tool, list_directory_tool, append_file_tool, write_script_tool
+from tools.reporting_tool import generate_basic_pdf_report_tool, generate_pdf_with_chart_tool
+from tools.delete_file_tool import delete_confirmation_tool
+from tools.stock_data_tool import stock_data_tool
+from tools.data_processing_tool import describe_csv_tool
+from tools.common_tools import calculator_tool, datetime_tool, summarize_text_func
+from langchain_community.tools import DuckDuckGoSearchRun
+from tools.news_api_tool import news_api_tool # <-- IMPORT NEWS TOOL
+# --- End Tool Imports ---
 
 # --- Tool Imports ---
 from tools.browser_tool import browser_tool, extract_tables_tool
@@ -69,6 +81,7 @@ def initialize_agent(
         terminal_tool_enhanced,
         read_file_tool,
         write_file_tool,
+        news_api_tool,
         append_file_tool,
         # replace_text_tool,
         list_directory_tool,

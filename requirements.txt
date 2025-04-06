@@ -21,3 +21,6 @@ Flask>=2.2.0         # <-- ADD
 python-socketio>=5.8 # <-- ADD (Socket.IO library)
 Flask-SocketIO>=5.3  # <-- ADD (Flask integration)
 eventlet           # <-- ADD (One option for SocketIO async mode)
+fpdf
+langchain-google-genai
+numexpr

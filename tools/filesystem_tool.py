@@ -6,6 +6,50 @@ from langchain.tools import Tool
 import traceback
 import codecs # Ensure codecs is imported for write_file
 
+# --- Define Output and Script Directories ---
+try:
+    PROJECT_ROOT = Path(__file__).parent.parent.resolve() # Get project root
+    OUTPUT_DIR = PROJECT_ROOT / "outputs"
+    SCRIPT_DIR = PROJECT_ROOT / "scripts" # Define the allowed script directory
+    # Ensure directories exist
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    SCRIPT_DIR.mkdir(parents=True, exist_ok=True) # Create scripts dir if needed
+    print(f"DEBUG [filesystem_tool.py]: OUTPUT_DIR: {OUTPUT_DIR}")
+    print(f"DEBUG [filesystem_tool.py]: SCRIPT_DIR: {SCRIPT_DIR}")
+except Exception as e:
+    print(f"CRITICAL ERROR setting up directories: {e}")
+    OUTPUT_DIR = Path("outputs"); SCRIPT_DIR = Path("scripts") # Fallbacks
+
+# --- Helper Function for Safe Path Resolution (OUTPUTS ONLY) ---
+def _resolve_outputs_path(input_path_str: str) -> Path | None:
+    # ... (Implementation from previous correct version) ...
+    if not isinstance(input_path_str, str): print(f"FS Path Err: Input not string"); return None
+    cleaned_path = input_path_str.strip().replace("\\", "/")
+    if not cleaned_path or cleaned_path == '.': return OUTPUT_DIR
+    if Path(cleaned_path).is_absolute() or ".." in Path(cleaned_path).parts: print(f"FS Security Err: Absolute/'..' denied: '{input_path_str}'."); return None
+    target_path = (OUTPUT_DIR / cleaned_path).resolve()
+    try:
+        if target_path == OUTPUT_DIR or target_path.is_relative_to(OUTPUT_DIR): return target_path
+        else: print(f"FS Security Err: Resolved path '{target_path}' outside '{OUTPUT_DIR}'."); return None
+    except ValueError: print(f"FS Security Err: Cannot compare path '{target_path}' with '{OUTPUT_DIR}'."); return None
+    except Exception as e: print(f"FS Path Err: Validating '{target_path}': {e}"); traceback.print_exc(); return None
+
+# --- Helper Function for Safe Path Resolution (SCRIPTS ONLY) ---
+def _resolve_scripts_path(input_path_str: str) -> Path | None:
+    # ... (Implementation from previous correct version) ...
+    if not isinstance(input_path_str, str): print(f"Script Path Err: Input not string"); return None
+    cleaned_path = input_path_str.strip().replace("\\", "/").lstrip("/")
+    if not cleaned_path or not cleaned_path.lower().endswith(".py"): print(f"Script Path Err: Need non-empty .py path: '{input_path_str}'"); return None
+    if ".." in Path(cleaned_path).parts: print(f"Script Security Err: '..' denied: '{input_path_str}'."); return None
+    if Path(cleaned_path).is_absolute(): print(f"Script Security Err: Absolute paths denied: '{input_path_str}'."); return None
+    target_path = (SCRIPT_DIR / cleaned_path).resolve()
+    try:
+        if target_path != SCRIPT_DIR and target_path.is_relative_to(SCRIPT_DIR): return target_path
+        else: print(f"Script Security Err: Path '{target_path}' not within '{SCRIPT_DIR}'."); return None
+    except ValueError: print(f"Script Security Err: Cannot compare '{target_path}' with '{SCRIPT_DIR}'."); return None
+    except Exception as e: print(f"Script Path Err: Validating '{target_path}': {e}"); traceback.print_exc(); return None
+
+
 # Define the designated output directory relative to the project root
 try:
     OUTPUT_DIR = Path("outputs").resolve()
@@ -361,7 +405,41 @@ def replace_text_in_file(input_str: str) -> str:
         return f"Error replacing text in file '{relative_display_path}'. Details: {str(e)}"
 
 
+# --- ADDED FUNCTION: Write Python Script (SCRIPTS DIR ONLY) ---
+def write_python_script(path_and_code: str) -> str:
+    """
+    Writes Python code to a specified .py file within the designated 'scripts' directory.
+    Input format: 'relative/path/to/script.py|Python code content'.
+    Creates subdirectories within 'scripts' if needed. Overwrites existing files.
+    Decodes standard Python escape sequences (like \\n) in the code content.
+    """
+    print(f"Filesystem Tool: Attempting write PYTHON SCRIPT: '{path_and_code[:100]}...'")
+    try:
+        parts = path_and_code.split('|', 1)
+        if len(parts) != 2: return "Error: Input must be 'script_path.py|python_code'."
+        script_path_str, code_raw = parts[0].strip(), parts[1]
 
+        target_path = _resolve_scripts_path(script_path_str) # Use scripts helper
+        if not target_path: return f"Error: Invalid/disallowed script path '{script_path_str}'. Must be relative .py in 'scripts/'."
+
+        try: code_content = codecs.decode(code_raw, 'unicode_escape')
+        except Exception as de: print(f"Warn (Script): Decode fail: {de}"); code_content = code_raw
+
+        if target_path.exists() and target_path.is_dir(): return f"Error: Cannot write script. Path '{target_path.relative_to(PROJECT_ROOT)}' exists and is directory."
+
+        parent_dir = target_path.parent
+        if not (parent_dir == SCRIPT_DIR or parent_dir.is_relative_to(SCRIPT_DIR)): return f"Error: Cannot create parent dir '{parent_dir.relative_to(PROJECT_ROOT)}' outside 'scripts/'."
+        parent_dir.mkdir(parents=True, exist_ok=True)
+
+        target_path.write_text(code_content, encoding='utf-8')
+        relative_path_out = target_path.relative_to(PROJECT_ROOT)
+        print(f"Filesystem Tool: Wrote {len(code_content)} chars Python code to {target_path}")
+        return f"Successfully wrote Python script to: {relative_path_out}"
+
+    except Exception as e:
+        print(f"FS Script Error '{script_path_str}': {e}"); traceback.print_exc()
+        return f"Error writing Python script '{Path(script_path_str).name}': {str(e)}"
+# --- END ADDED FUNCTION ---
 
 # --- LangChain Tool Definitions ---
 
@@ -429,5 +507,5 @@ replace_text_tool = Tool(
         f"Output confirms success (reporting number of replacements) or provides an error message."
     ),
 )
-# --- END TOOL DEFINITIONS ---
-# --- END OF FILE ---
+# --- Definition for Writing Scripts ---
+write_script_tool = Tool( name="Write Python Script", func=write_python_script, description=f"Writes Python code to '.py' file inside '{SCRIPT_DIR.name}/'. Input: 'relative/script.py|code'. Use '\\n'. OVERWRITES. Use this BEFORE executing with terminal tool.")

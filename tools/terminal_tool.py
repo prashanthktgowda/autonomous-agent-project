@@ -14,6 +14,14 @@ import json # To return structured output
 # Allowing '.' (project root) can be risky if unrelated scripts exist there.
 # Using a dedicated 'scripts' directory is generally safer.
 ALLOWED_SCRIPT_DIRS = [Path("."), Path("scripts")]
+# --- Configuration ---
+ALLOWED_SCRIPT_DIRS = [Path("."), Path("scripts")]
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+RESOLVED_ALLOWED_SCRIPT_DIRS = [(PROJECT_ROOT / d).resolve() for d in ALLOWED_SCRIPT_DIRS]
+ALLOWED_COMMANDS = ["ls", "pwd", "echo", "cat", "head", "tail", "grep", "wc"]
+print(f"DEBUG [terminal_tool.py]: Project Root: {PROJECT_ROOT}")
+print(f"DEBUG [terminal_tool.py]: Allowed Script Dirs (Resolved): {RESOLVED_ALLOWED_SCRIPT_DIRS}")
+# --- End Configuration ---
 
 # Resolve allowed directories to absolute paths for reliable comparison
 try:
@@ -37,6 +45,45 @@ COMMAND_TIMEOUT = 60
 # Max length for stdout/stderr to return to agent
 MAX_OUTPUT_LENGTH = 3000
 # --- End Configuration ---
+
+def _is_script_path_safe(script_path_str: str) -> bool:
+    """Checks if the script path is within the allowed directories."""
+    try:
+        script_path = Path(script_path_str)
+        if script_path.is_absolute():
+            print(f"Terminal Security Warning: Absolute script paths denied: '{script_path_str}'")
+            return False
+        full_script_path = (PROJECT_ROOT / script_path).resolve()
+        for allowed_dir in RESOLVED_ALLOWED_SCRIPT_DIRS:
+            if full_script_path.is_relative_to(allowed_dir):
+                if full_script_path.is_file():
+                    print(f"DEBUG [Terminal Safety Check]: Script path '{full_script_path}' is safe and exists.")
+                    return True
+                else:
+                     print(f"Terminal Security Err: Path resolves safely but is not a file (or doesn't exist): '{full_script_path}'")
+                     return False
+        print(f"Terminal Security Warning: Script path '{script_path_str}' resolves outside allowed: {RESOLVED_ALLOWED_SCRIPT_DIRS}")
+        return False
+    except Exception as e:
+        print(f"Terminal Security Error checking script path '{script_path_str}': {e}")
+        return False
+
+def run_terminal_command_enhanced(command: str) -> str:
+    """
+    Executes allowed shell commands or specific safe python scripts.
+    Strips leading/trailing backticks. Returns JSON string output.
+    !! SECURITY WARNING !! Remains critical.
+    """
+    if not isinstance(command, str):
+         return json.dumps({"stdout": "", "stderr": "Error: Command input must be a string.", "exit_code": 1})
+
+    # --- NEW: Strip leading/trailing backticks and whitespace ---
+    trimmed_command = command.strip()
+    if trimmed_command.startswith('`') and trimmed_command.endswith('`'):
+        trimmed_command = trimmed_command[1:-1].strip()
+        print(f"DEBUG [Terminal Tool]: Removed backticks, processing command: '{trimmed_command}'")
+    else:
+         print(f"Terminal Tool (Enhanced): Received command: '{trimmed_command}'")
 
 
 def _is_script_path_safe(script_path_str: str) -> bool:
